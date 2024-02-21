@@ -80,8 +80,30 @@ public class PlayerController : MonoBehaviour
 
     private void DetectGround()
     {
+        //make the halfExtends argument more readable
+        Vector3 halfExtends = new Vector3(_groundDetectionSurfaceArea / 2, _groundDetectionDepth / 2, _groundDetectionSurfaceArea / 2);
 
+        //Properly offset the center of the boxscan
+        Vector3 scanOrigin = new Vector3(_feetPosition.position.x, _feetPosition.position.y - _groundDetectionDepth/2, _feetPosition.position.z);
+
+        //collect all collisions from the feet downwards.
+        Collider[] detectedColliders = Physics.OverlapBox(scanOrigin, halfExtends);
+
+        //Assume we're not on the ground anymore
+        _isOnGround = false;
+
+        //If we detect any ground, then correct our previous assumption
+        foreach (Collider detection in detectedColliders)
+        {
+            if (detection.tag == "Ground")
+            {
+                _isOnGround = true;
+                break;
+            }
+        }
     }
+
+
 
     //External Utils
     public GameObject GetPlayer()
@@ -106,12 +128,16 @@ public class PlayerController : MonoBehaviour
     //Debugging
     private void DrawJumpDetectionGizmo()
     {
+        //Set the color
         Gizmos.color = _groundDetectionGizmoColor;
 
+        //make the cube dimensions more readable for later
         Vector3 detectionCubeDimensions = new Vector3(_groundDetectionSurfaceArea, _groundDetectionDepth, _groundDetectionSurfaceArea);
 
-        //Offset the y by boxHeight/2
-        Vector3 detectionCubeOrigin = new Vector3(_feetPosition.position.x, _feetPosition.position.y - _groundDetectionDepth/2, _feetPosition.position.z); 
+        //Offset the y by boxHeight/2. Doing this will draw the box properly-- from the feet downwards
+        Vector3 detectionCubeOrigin = new Vector3(_feetPosition.position.x, _feetPosition.position.y - _groundDetectionDepth/2, _feetPosition.position.z);
+
+        //Draw the cube
         Gizmos.DrawWireCube(detectionCubeOrigin, detectionCubeDimensions);
     }
 
