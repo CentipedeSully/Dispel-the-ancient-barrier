@@ -1485,7 +1485,7 @@ CapsuleCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1774764759}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: 4efb7d104e96bdd44b315cee21a3aaba, type: 2}
   m_IsTrigger: 0
   m_Enabled: 1
   m_Radius: 0.5
@@ -1526,6 +1526,9 @@ MonoBehaviour:
   _moveSpeed: 10000
   _gravityModifier: 10000
   _moveSpeedCap: 0
+  _dashForce: 2500
+  _dashCooldown: 0.7
+  _isDashReady: 1
   _isOnGround: 0
   _feetPosition: {fileID: 958980788}
   _groundDetectionDepth: 0.4

@@ -10,12 +10,17 @@ public class PlayerController : MonoBehaviour
     private InputReader _inputReader;
     [SerializeField] private GameObject _playerObject;
     private Rigidbody _playerRB;
+    private Vector2 _moveInput;
+    private Vector3 _moveDirection;
 
     [Header("Movement Utilities")]
     [SerializeField] private bool _isMovementEnabled = true;
     [SerializeField] private int _moveSpeed;
     [SerializeField] private int _gravityModifier;
     [SerializeField] private int _moveSpeedCap;
+    [SerializeField] private int _dashForce;
+    [SerializeField] private float _dashCooldown = .25f;
+    [SerializeField] private bool _isDashReady = true;
 
     [Header("Jump Utilities")]
     [SerializeField] private bool _isOnGround = false;
@@ -44,12 +49,15 @@ public class PlayerController : MonoBehaviour
 
     private void Update()
     {
+        ReadInput();
         DetectGround();
     }
 
     private void FixedUpdate()
     {
+        CacheMoveDirection();
         ApplyMoreGravityIfFalling();
+        DashPlayer();
         MovePlayer();
         JumpPlayer();
         //Clamp the velocity
@@ -61,18 +69,23 @@ public class PlayerController : MonoBehaviour
     }
 
     //Internal Utils
+    private void ReadInput()
+    {
+        _moveInput = _inputReader.GetMoveInput();
+    }
+
+    private void CacheMoveDirection()
+    {
+        //Calculate and cache this frame's current worldSpace moveDirection
+        _moveDirection = new Vector3(_moveInput.x, 0, _moveInput.y).normalized;
+    }
+
     private void MovePlayer()
     {
         if (_isMovementEnabled && _playerRB != null)
         {
-            //get the readInput
-            Vector2 moveVector = _inputReader.GetMoveInput().normalized;
-
-            //translate the moveVector into world space
-            Vector3 worldMoveVector = new Vector3(moveVector.x, 0, moveVector.y); // only move along x & z
-
             //Apply the velocity
-            _playerRB.AddForce(_moveSpeed * Time.deltaTime * worldMoveVector);
+            _playerRB.AddForce(_moveSpeed * Time.deltaTime * _moveDirection);
         }
     }
 
@@ -106,6 +119,23 @@ public class PlayerController : MonoBehaviour
             //Exit the jump early
             CancelInvoke("EndJump");
             EndJump();
+        }
+    }
+
+    private void DashPlayer()
+    {
+        if (_playerRB != null && _isOnGround && _isMovementEnabled && _isDashReady && _inputReader.GetDashInput())
+        {
+            //ONLY DASH IF THE PLAYER IS ALREADY MOVING!!
+            if (_moveDirection.magnitude > 0)
+            {
+                //Apply the dash force 
+                _playerRB.AddForce(_moveDirection * _dashForce * Time.deltaTime, ForceMode.Impulse);
+
+                //Enter Dash Cooldown
+                _isDashReady = false;
+                Invoke("ReadyDash", _dashCooldown);
+            }
         }
     }
 
@@ -155,6 +185,12 @@ public class PlayerController : MonoBehaviour
     {
         if (_isJumping)
             _isJumping = false;
+    }
+
+    private void ReadyDash()
+    {
+        if (!_isDashReady)
+            _isDashReady = true;
     }
 
 
