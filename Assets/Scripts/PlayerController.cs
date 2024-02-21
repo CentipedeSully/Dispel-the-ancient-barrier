@@ -26,8 +26,11 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float _groundDetectionSurfaceArea = .5f;
     [SerializeField] private Color _groundDetectionGizmoColor = Color.magenta;
     [SerializeField] private bool _isJumping = false;
-    [SerializeField] private bool _jumpDuration;
+    [SerializeField] private bool _isJumpReady = true;
     [SerializeField] private int _jumpForce;
+    [SerializeField] private int _jumpLevitationForce;
+    [SerializeField] private float _jumpLevitationDuration;
+    [SerializeField] private float _jumpCooldown = .2f;
 
 
     //Monos
@@ -46,8 +49,9 @@ public class PlayerController : MonoBehaviour
 
     private void FixedUpdate()
     {
-        ApplyGravityModifier();
+        ApplyMoreGravityIfFalling();
         MovePlayer();
+        JumpPlayer();
         //Clamp the velocity
     }
 
@@ -72,10 +76,48 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private void ApplyGravityModifier()
+    private void JumpPlayer()
+    {
+        //are we legally trying to enter the jumpstate?
+        if (_isOnGround && _inputReader.GetJumpInput() && _isJumpReady && !_isJumping)
+        {
+            //Enter the jumpState
+            _isJumping = true;
+            Invoke("EndJump", _jumpLevitationDuration);
+
+            //Apply Jump Force
+            _playerRB.AddForce(Vector3.up * _jumpForce * Time.deltaTime, ForceMode.Impulse);
+
+            //Enter the Jump Cooldown
+            _isJumpReady = false;
+            Invoke("ReadyJump", _jumpCooldown);
+        }
+
+        //are we currently in the jump state (while trying to prolong the jump)?
+        else if (_inputReader.GetJumpInput() && _isJumping)
+        {
+            //Assist the jump via levitation
+            _playerRB.AddForce(Vector3.up * _jumpLevitationForce * Time.deltaTime);
+        }
+
+        //are we discontinuing the jump early?
+        else if (!_inputReader.GetJumpInput() && _isJumping)
+        {
+            //Exit the jump early
+            CancelInvoke("EndJump");
+            EndJump();
+        }
+    }
+
+    private void ApplyMoreGravityIfFalling()
     {
         if (_playerRB != null)
-            _playerRB.AddForce(Vector3.down * Time.deltaTime * _gravityModifier);
+        {
+            //Add a more polished downwards force if the player is falling
+            if (!_isOnGround && !_isJumping)
+                _playerRB.AddForce(Vector3.down * Time.deltaTime * _gravityModifier);
+        }
+            
     }
 
     private void DetectGround()
@@ -101,6 +143,18 @@ public class PlayerController : MonoBehaviour
                 break;
             }
         }
+    }
+
+    private void ReadyJump()
+    {
+        if (!_isJumpReady)
+            _isJumpReady = true;
+    }
+
+    private void EndJump()
+    {
+        if (_isJumping)
+            _isJumping = false;
     }
 
 
