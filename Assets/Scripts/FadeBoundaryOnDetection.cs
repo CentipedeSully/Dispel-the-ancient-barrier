@@ -25,8 +25,8 @@ public class FadeBoundaryOnDetection : MonoBehaviour
     private void Update()
     {
         DetectBoundary();
-        FadeBundaries();
-        UnfadeBoundaries();
+        //FadeBundaries();
+        //UnfadeBoundaries();
     }
 
     private void OnDrawGizmosSelected()
@@ -52,8 +52,6 @@ public class FadeBoundaryOnDetection : MonoBehaviour
 
         //Scan from the main camera to the target focus
         RaycastHit[] detections = Physics.RaycastAll(transform.position, castDirection, distance, _boundaryLayerMask);
-
-        List<GameObject> detectedBoundaries = new List<GameObject>();
 
         //If a detection is captured (that isn't the target focus itself), then save it
         foreach (RaycastHit detection in detections)
@@ -84,11 +82,13 @@ public class FadeBoundaryOnDetection : MonoBehaviour
                 Renderer boundaryRenderer = boundary.GetComponent<Renderer>();
                 Color color = boundaryRenderer.material.color;
 
+                
+
                 //Don't forget this object's original color!
                 _rememberedColors.Add(boundary, color);
 
                 //Change the transparency
-                color.a = .5f;
+                color.a = 1f;
 
                 //Set the new transparency to the object
                 boundaryRenderer.material.color = color;
