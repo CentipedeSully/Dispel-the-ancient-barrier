@@ -29,6 +29,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float _groundDetectionDepth = .2f;
     [Tooltip("Starting from the player's center, how far around the player will we check for ground?")]
     [SerializeField] private float _groundDetectionSurfaceArea = .5f;
+    [SerializeField] private LayerMask _groundLayerMask;
     [SerializeField] private Color _groundDetectionGizmoColor = Color.magenta;
     [SerializeField] private bool _isJumping = false;
     [SerializeField] private bool _isJumpReady = true;
@@ -159,8 +160,9 @@ public class PlayerController : MonoBehaviour
         Vector3 scanOrigin = new Vector3(_feetPosition.position.x, _feetPosition.position.y - _groundDetectionDepth/2, _feetPosition.position.z);
 
         //collect all collisions from the feet downwards.
-        Collider[] detectedColliders = Physics.OverlapBox(scanOrigin, halfExtends);
+        Collider[] detectedColliders = Physics.OverlapBox(scanOrigin, halfExtends, Quaternion.identity, _groundLayerMask);
 
+        /*
         //Assume we're not on the ground anymore
         _isOnGround = false;
 
@@ -172,7 +174,12 @@ public class PlayerController : MonoBehaviour
                 _isOnGround = true;
                 break;
             }
-        }
+        }*/
+
+        //update the groundstate
+        if (detectedColliders.Length > 0)
+            _isOnGround = true;
+        else _isOnGround = false;
     }
 
     private void ReadyJump()
