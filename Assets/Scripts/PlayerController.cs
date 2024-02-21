@@ -16,16 +16,32 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private int _moveSpeed;
     [SerializeField] private int _gravityModifier;
     [SerializeField] private int _moveSpeedCap;
-    //[SerializeField] private int _jumpForce;
-    //[SerializeField] private bool _isJumping;
+
+    [Header("Jump Utilities")]
+    [SerializeField] private bool _isOnGround = false;
+    [SerializeField] private Transform _feetPosition;
+    [Tooltip("Starting from the feet, how far down will we check for solid ground?")]
+    [SerializeField] private float _groundDetectionDepth = .2f;
+    [Tooltip("Starting from the player's center, how far around the player will we check for ground?")]
+    [SerializeField] private float _groundDetectionSurfaceArea = .5f;
+    [SerializeField] private Color _groundDetectionGizmoColor = Color.magenta;
+    [SerializeField] private bool _isJumping = false;
+    [SerializeField] private bool _jumpDuration;
+    [SerializeField] private int _jumpForce;
 
 
     //Monos
     private void Start()
     {
         _inputReader = _gameManager.GetInputReader();
-        _playerRB = _playerObject.GetComponent<Rigidbody>();
+        if (_playerObject != null)
+            _playerRB = _playerObject.GetComponent<Rigidbody>();
         
+    }
+
+    private void Update()
+    {
+        DetectGround();
     }
 
     private void FixedUpdate()
@@ -35,7 +51,10 @@ public class PlayerController : MonoBehaviour
         //Clamp the velocity
     }
 
-
+    private void OnDrawGizmosSelected()
+    {
+        DrawJumpDetectionGizmo();
+    }
 
     //Internal Utils
     private void MovePlayer()
@@ -59,7 +78,10 @@ public class PlayerController : MonoBehaviour
             _playerRB.AddForce(Vector3.down * Time.deltaTime * _gravityModifier);
     }
 
+    private void DetectGround()
+    {
 
+    }
 
     //External Utils
     public GameObject GetPlayer()
@@ -82,7 +104,16 @@ public class PlayerController : MonoBehaviour
 
 
     //Debugging
+    private void DrawJumpDetectionGizmo()
+    {
+        Gizmos.color = _groundDetectionGizmoColor;
 
+        Vector3 detectionCubeDimensions = new Vector3(_groundDetectionSurfaceArea, _groundDetectionDepth, _groundDetectionSurfaceArea);
+
+        //Offset the y by boxHeight/2
+        Vector3 detectionCubeOrigin = new Vector3(_feetPosition.position.x, _feetPosition.position.y - _groundDetectionDepth/2, _feetPosition.position.z); 
+        Gizmos.DrawWireCube(detectionCubeOrigin, detectionCubeDimensions);
+    }
 
 
 
