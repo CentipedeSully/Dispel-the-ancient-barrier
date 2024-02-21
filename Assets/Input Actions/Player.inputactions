@@ -24,9 +24,18 @@
                     "initialStateCheck": true
                 },
                 {
-                    "name": "Burst",
+                    "name": "Dash",
                     "type": "Button",
                     "id": "8c373273-b63a-4154-bb5b-91c3a7e6c0f1",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
+                },
+                {
+                    "name": "Jump",
+                    "type": "Button",
+                    "id": "644df3f9-0f6f-449d-a734-f7bb7b6e1e19",
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": "",
@@ -37,7 +46,7 @@
                 {
                     "name": "",
                     "id": "74897624-66bf-40fe-965f-b3f55f1fe9ae",
-                    "path": "<Keyboard>/space",
+                    "path": "<Keyboard>/f",
                     "interactions": "",
                     "processors": "",
                     "groups": "PC",
@@ -52,7 +61,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "PC",
-                    "action": "Burst",
+                    "action": "Dash",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -110,6 +119,17 @@
                     "action": "Directional Movement",
                     "isComposite": false,
                     "isPartOfComposite": true
+                },
+                {
+                    "name": "",
+                    "id": "f5ca2020-e510-4692-9b9e-151e6cdf6ae9",
+                    "path": "<Keyboard>/space",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "PC",
+                    "action": "Jump",
+                    "isComposite": false,
+                    "isPartOfComposite": false
                 }
             ]
         }

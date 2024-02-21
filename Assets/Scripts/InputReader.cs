@@ -8,7 +8,8 @@ public class InputReader : MonoBehaviour
     //Declarations
     [SerializeField] private Vector2 _moveInput = Vector2.zero;
     [SerializeField] private bool _barrierInput = false;
-    [SerializeField] private bool _burstInput = false;
+    [SerializeField] private bool _dashInput = false;
+    [SerializeField] private bool _jumpInput = false;
 
 
     //Monos
@@ -31,15 +32,19 @@ public class InputReader : MonoBehaviour
             _moveInput= Vector2.zero; 
     }
 
-
     public void SetBarrierInput(InputAction.CallbackContext context)
     {
         _barrierInput = context.ReadValueAsButton();
     }
 
-    public void SetBurstInput(InputAction.CallbackContext context)
+    public void SetDashInput(InputAction.CallbackContext context)
     {
-        _burstInput = context.ReadValueAsButton();
+        _dashInput = context.ReadValueAsButton();
+    }
+
+    public void SetJumpInput(InputAction.CallbackContext context)
+    {
+        _jumpInput = context.ReadValueAsButton();
     }
 
     public Vector2 GetMoveInput()
@@ -52,9 +57,14 @@ public class InputReader : MonoBehaviour
         return _barrierInput;
     }
 
-    public bool GetBurstInput()
+    public bool GetDashInput()
     {
-        return _burstInput;
+        return _dashInput;
+    }
+
+    public bool GetJumpInput()
+    {
+        return _jumpInput;
     }
 
 
