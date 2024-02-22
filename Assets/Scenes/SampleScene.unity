@@ -1139,8 +1139,9 @@ MonoBehaviour:
   _healthDisplay: {fileID: 1152286407}
   _energyDisplay: {fileID: 898981862}
   _staminaDisplay: {fileID: 1530384717}
-  _darkFadeObject: {fileID: 0}
-  _lightFadeObject: {fileID: 0}
+  _staminaBarAnimator: {fileID: 2137021648}
+  _staminaInsufficientParamName: insufficientTrigger
+  _staminaFillCompleteParamName: fillCompleteTrigger
 --- !u!1 &656761934
 GameObject:
   m_ObjectHideFlags: 0
@@ -3031,7 +3032,7 @@ MonoBehaviour:
   _stamina: 100
   _maxStamina: 100
   _staminaRegen: 15
-  _isDebugEnabled: 0
+  _isDebugEnabled: 1
   _debugValue: 0
   _changeHealthByValueCMD: 0
   _changeEnergyByValueCMD: 0
@@ -3789,6 +3790,7 @@ GameObject:
   - component: {fileID: 2137021645}
   - component: {fileID: 2137021647}
   - component: {fileID: 2137021646}
+  - component: {fileID: 2137021648}
   m_Layer: 0
   m_Name: Background
   m_TagString: Untagged
@@ -3852,6 +3854,26 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2137021644}
   m_CullTransparentMesh: 1
+--- !u!95 &2137021648
+Animator:
+  serializedVersion: 5
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2137021644}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: dcac3c48e58da0e47b378f44d209bcf6, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
 --- !u!1 &2137277796
 GameObject:
   m_ObjectHideFlags: 0

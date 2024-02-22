@@ -121,7 +121,7 @@ public class PlayerController : MonoBehaviour
             else
             {
                 //trigger the insufficientStamina Feedback animation
-                //[... unimplemented ^_^]
+                _gameManager.TriggerInsufficientStaminaFeedback();
             }
             
         }
@@ -166,7 +166,7 @@ public class PlayerController : MonoBehaviour
                 else
                 {
                     //trigger the insufficientStamina Feedback animation
-                    //[... unimplemented ^_^]
+                    _gameManager.TriggerInsufficientStaminaFeedback();
                 }
 
 

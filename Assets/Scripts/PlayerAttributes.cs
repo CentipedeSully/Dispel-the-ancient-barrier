@@ -96,6 +96,10 @@ public class PlayerAttributes : MonoBehaviour
 
         //Update the staminaBar
         _gameManager.UpdateStaminaBar(_stamina / _maxStamina);
+
+        //trigger CompletedFill stamina feedback animation
+        if (_stamina == _maxStamina)
+            _gameManager.TriggerFillCompletedStaminaFeedback();
     }
 
     private void TickRegenIfAlive()
