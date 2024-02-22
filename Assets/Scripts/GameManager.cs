@@ -13,6 +13,8 @@ public class GameManager: MonoBehaviour
     [SerializeField] private GameObject _healthDisplay;
     [SerializeField] private GameObject _energyDisplay;
     [SerializeField] private GameObject _staminaDisplay;
+    [SerializeField] private GameObject _darkFadeObject;
+    [SerializeField] private GameObject _lightFadeObject;
 
 
     //Internal Utils
@@ -45,6 +47,7 @@ public class GameManager: MonoBehaviour
         if (display != null)
             display.SetActive(false);
     }
+
 
 
 
