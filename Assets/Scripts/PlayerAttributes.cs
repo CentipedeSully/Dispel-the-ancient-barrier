@@ -12,6 +12,7 @@ public class PlayerAttributes : MonoBehaviour
     [Header("Player Attributes")]
     [SerializeField] private bool _isDead = false;
     [SerializeField] private bool _isRegenEnabled = true;
+    //[SerializeField] private bool _isStunned = false;
 
     [Header("Health")]
     [SerializeField] private float _health = 100;
@@ -169,6 +170,68 @@ public class PlayerAttributes : MonoBehaviour
             _isRegenEnabled = true;
     }
 
+    public float GetHealth()
+    {
+        return _health;
+    }
+
+    public float GetEnergy()
+    {
+        return _energy;
+    }
+
+    public float GetStamina()
+    {
+        return _stamina;
+    }
+
+    public float GetMaxHealth()
+    {
+        return _maxHealth;
+    }
+
+    public float GetMaxEnergy()
+    {
+        return _maxEnergy;
+    }
+
+    public float GetMaxStamina()
+    {
+        return _maxStamina;
+    }
+
+    public void ModifyHealth(float value)
+    {
+        SetHealth(_health + value);
+    }
+
+    public void ModifyEnergy(float value)
+    {
+        SetEnergy(_energy + value);
+    }
+
+    public void ModifyStamina(float value)
+    {
+        SetStamina(_stamina + value);
+    }
+
+
+    public void ModifyMaxHealth(float value)
+    {
+        SetMaxHealth(_maxHealth + value);
+    }
+
+    public void ModifyMaxEnergy(float value)
+    {
+        SetMaxEnergy(_maxEnergy + value);
+    }
+
+    public void ModifyMaxStamina(float value)
+    {
+        SetMaxStamina(_maxStamina + value);
+    }
+
+
 
 
     //Debugging
@@ -179,37 +242,37 @@ public class PlayerAttributes : MonoBehaviour
             if (_changeHealthByValueCMD)
             {
                 _changeHealthByValueCMD = false;
-                SetHealth(_debugValue);
+                ModifyHealth(_debugValue);
             }
 
             if (_changeEnergyByValueCMD)
             {
                 _changeEnergyByValueCMD = false;
-                SetEnergy(_debugValue);
+                ModifyEnergy(_debugValue);
             }
 
             if (_changeStaminaByValueCMD)
             {
                 _changeStaminaByValueCMD = false;
-                SetStamina(_debugValue);
+                ModifyStamina(_debugValue);
             }
 
             if (_changeMaxHealthByValueCMD)
             {
                 _changeMaxHealthByValueCMD = false;
-                SetMaxHealth(_debugValue);
+                ModifyMaxHealth(_debugValue);
             }
 
             if (_changeMaxEnergyByValueCMD)
             {
                 _changeMaxEnergyByValueCMD = false;
-                SetMaxEnergy(_debugValue);
+                ModifyMaxEnergy(_debugValue);
             }
 
             if (_changeMaxStaminaByValueCMD)
             {
                 _changeMaxStaminaByValueCMD = false;
-                SetMaxStamina(_debugValue);
+                ModifyMaxStamina(_debugValue);
             }
 
             if (_disableRegenCMD)

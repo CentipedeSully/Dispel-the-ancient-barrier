@@ -12,17 +12,22 @@ public class PlayerController : MonoBehaviour
     private Rigidbody _playerRB;
     private Vector2 _moveInput;
     private Vector3 _moveDirection;
+    [SerializeField] private PlayerAttributes _playerAttributes;
 
     [Header("Movement Utilities")]
     [SerializeField] private bool _isMovementEnabled = true;
     [SerializeField] private int _moveSpeed;
     [SerializeField] private int _gravityModifier;
     [SerializeField] private int _moveSpeedCap;
+
+    [Header("Dash Utilites")]
     [SerializeField] private int _dashForce;
     [SerializeField] private float _dashCooldown = .25f;
+    [SerializeField] private float _dashStaminaCost;
     [SerializeField] private bool _isDashReady = true;
 
     [Header("Jump Utilities")]
+    [SerializeField] private float _jumpStaminaCost;
     [SerializeField] private bool _isOnGround = false;
     [SerializeField] private Transform _feetPosition;
     [Tooltip("Starting from the feet, how far down will we check for solid ground?")]
@@ -95,16 +100,30 @@ public class PlayerController : MonoBehaviour
         //are we legally trying to enter the jumpstate?
         if (_isOnGround && _inputReader.GetJumpInput() && _isJumpReady && !_isJumping)
         {
-            //Enter the jumpState
-            _isJumping = true;
-            Invoke("EndJump", _jumpLevitationDuration);
+            //Check if we have enough stamina
+            if (IsStaminaEnough(_jumpStaminaCost))
+            {
+                //Decrement stamina
+                _playerAttributes.ModifyStamina(-_jumpStaminaCost);
 
-            //Apply Jump Force
-            _playerRB.AddForce(Vector3.up * _jumpForce * Time.deltaTime, ForceMode.Impulse);
+                //Enter the jumpState
+                _isJumping = true;
+                Invoke("EndJump", _jumpLevitationDuration);
 
-            //Enter the Jump Cooldown
-            _isJumpReady = false;
-            Invoke("ReadyJump", _jumpCooldown);
+                //Apply Jump Force
+                _playerRB.AddForce(Vector3.up * _jumpForce * Time.deltaTime, ForceMode.Impulse);
+
+                //Enter the Jump Cooldown
+                _isJumpReady = false;
+                Invoke("ReadyJump", _jumpCooldown);
+            }
+            
+            else
+            {
+                //trigger the insufficientStamina Feedback animation
+                //[... unimplemented ^_^]
+            }
+            
         }
 
         //are we currently in the jump state (while trying to prolong the jump)?
@@ -130,12 +149,27 @@ public class PlayerController : MonoBehaviour
             //ONLY DASH IF THE PLAYER IS ALREADY MOVING!!
             if (_moveDirection.magnitude > 0)
             {
-                //Apply the dash force 
-                _playerRB.AddForce(_moveDirection * _dashForce * Time.deltaTime, ForceMode.Impulse);
+                //Make sure we have enough stamina
+                if (IsStaminaEnough(_dashStaminaCost))
+                {
+                    //decrement stamina
+                    _playerAttributes.ModifyStamina(-_dashStaminaCost);
 
-                //Enter Dash Cooldown
-                _isDashReady = false;
-                Invoke("ReadyDash", _dashCooldown);
+                    //Apply the dash force 
+                    _playerRB.AddForce(_moveDirection * _dashForce * Time.deltaTime, ForceMode.Impulse);
+
+                    //Enter Dash Cooldown
+                    _isDashReady = false;
+                    Invoke("ReadyDash", _dashCooldown);
+                }
+
+                else
+                {
+                    //trigger the insufficientStamina Feedback animation
+                    //[... unimplemented ^_^]
+                }
+
+
             }
         }
     }
@@ -200,6 +234,10 @@ public class PlayerController : MonoBehaviour
             _isDashReady = true;
     }
 
+    private bool IsStaminaEnough(float staminaCost)
+    {
+        return staminaCost <= _playerAttributes.GetStamina();
+    }
 
 
     //External Utils
