@@ -18,6 +18,16 @@ public class GameManager: MonoBehaviour
     [SerializeField] private GameObject _staminaDisplay;
 
     [Header("Animation Utilities")]
+    [SerializeField] private Animator _healthBarAnimator;
+    [SerializeField] [Range(0, 1)] private float _lowHealthThreshold;
+    [SerializeField] private string _healthLowParamName;
+    [SerializeField] private string _healthFillCompleteParamName;
+
+    [SerializeField] private Animator _energyBarAnimator;
+    [SerializeField] private string _energyInsufficientParamName;
+    [SerializeField] private string _energyFillCompleteParamName;
+    [SerializeField] private string _energyDrainingParamName;
+
     [SerializeField] private Animator _staminaBarAnimator;
     [SerializeField] private string _staminaInsufficientParamName;
     [SerializeField] private string _staminaFillCompleteParamName;
@@ -57,11 +67,6 @@ public class GameManager: MonoBehaviour
             display.SetActive(false);
     }
 
-    private void TriggerAnim(Animator animator, string triggerParam)
-    {
-        
-    }
-
 
     //External Utils
     public InputReader GetInputReader()
@@ -76,7 +81,12 @@ public class GameManager: MonoBehaviour
 
     public void UpdateHealthBar(float newRelativePercentage)
     {
+        //Update the bar's size
         SetBar(newRelativePercentage, _healthBar);
+
+        //Update the bar's feedback state
+        bool _isHealthLow = newRelativePercentage <= _lowHealthThreshold;
+        _healthBarAnimator.SetBool(_healthLowParamName, _isHealthLow);
     }
 
     public void UpdateEnergyBar(float newRelativePercentage)
@@ -117,6 +127,29 @@ public class GameManager: MonoBehaviour
     {
         ShowDisplay(_staminaDisplay);
     }
+
+
+    public void TriggerFillCompletedHealthFeedback()
+    {
+        _healthBarAnimator.SetTrigger(_healthFillCompleteParamName);
+    }
+
+
+    public void TriggerInsufficientEnergyFeedback()
+    {
+        _energyBarAnimator.SetTrigger(_energyInsufficientParamName);
+    }
+
+    public void TriggerFillCompletedEnergyFeedback()
+    {
+        _energyBarAnimator.SetTrigger(_energyFillCompleteParamName);
+    }
+
+    public void UpdateDrainingEnergyAnimationFeedback(bool isDrainingEnergy)
+    {
+        _energyBarAnimator.SetBool(_energyDrainingParamName, isDrainingEnergy);
+    }
+
 
     public void TriggerInsufficientStaminaFeedback()
     {

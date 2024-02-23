@@ -12,6 +12,7 @@ public class PlayerController : MonoBehaviour
     private Rigidbody _playerRB;
     private Vector2 _moveInput;
     private Vector3 _moveDirection;
+    private bool _barrierInput;
     [SerializeField] private PlayerAttributes _playerAttributes;
 
     [Header("Movement Utilities")]
@@ -23,11 +24,13 @@ public class PlayerController : MonoBehaviour
     [Header("Dash Utilites")]
     [SerializeField] private int _dashForce;
     [SerializeField] private float _dashCooldown = .25f;
-    [SerializeField] private float _dashStaminaCost;
+    [Tooltip("This script automatically offsets this value by the player's respective Regen attribute.")]
+    [SerializeField] [Min(0)] private float _dashStaminaCost;
     [SerializeField] private bool _isDashReady = true;
 
     [Header("Jump Utilities")]
-    [SerializeField] private float _jumpStaminaCost;
+    [Tooltip("This script automatically offsets this value by the player's respective Regen attribute.")]
+    [SerializeField] [Min(0)] private float _jumpStaminaCost;
     [SerializeField] private bool _isOnGround = false;
     [SerializeField] private Transform _feetPosition;
     [Tooltip("Starting from the feet, how far down will we check for solid ground?")]
@@ -43,6 +46,17 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float _jumpLevitationDuration;
     [SerializeField] private float _jumpCooldown = .2f;
 
+    [Header("Barrier Utilities")]
+    [Tooltip("This script automatically offsets this value by the player's respective Regen attribute.")]
+    [SerializeField] [Min(0)] private float _initialBarrierEnergyCost;
+    [Tooltip("This script automatically offsets this value by the player's respective Regen attribute.")]
+    [SerializeField] [Min(0)] private float _barrierUpkeepEnergyCost;
+    [SerializeField] private float _freeBarrierGracePeriod;
+    [SerializeField] private bool _isBarrierCurrentlyFree = false;
+    [SerializeField] private bool _isBarrierActive = false;
+    [SerializeField] private bool _isBarrierAbilityReady = true;
+    [SerializeField] private float _barrierCooldown = .3f;
+
 
     //Monos
     private void Start()
@@ -57,6 +71,8 @@ public class PlayerController : MonoBehaviour
     {
         ReadInput();
         DetectGround();
+
+        CastBarrier();
     }
 
     private void FixedUpdate()
@@ -78,6 +94,7 @@ public class PlayerController : MonoBehaviour
     private void ReadInput()
     {
         _moveInput = _inputReader.GetMoveInput();
+        _barrierInput = _inputReader.GetBarrierInput();
     }
 
     private void CacheMoveDirection()
@@ -103,8 +120,10 @@ public class PlayerController : MonoBehaviour
             //Check if we have enough stamina
             if (IsStaminaEnough(_jumpStaminaCost))
             {
-                //Decrement stamina
-                _playerAttributes.ModifyStamina(-_jumpStaminaCost);
+                //Decrement stamina. Factor in the regen's presence if it's enabled
+                if (_playerAttributes.IsRegenActive())
+                    _playerAttributes.ModifyStamina(-(_jumpStaminaCost + _playerAttributes.GetStaminaRegen() * Time.deltaTime));
+                else _playerAttributes.ModifyStamina(-_jumpStaminaCost);
 
                 //Enter the jumpState
                 _isJumping = true;
@@ -152,8 +171,10 @@ public class PlayerController : MonoBehaviour
                 //Make sure we have enough stamina
                 if (IsStaminaEnough(_dashStaminaCost))
                 {
-                    //decrement stamina
-                    _playerAttributes.ModifyStamina(-_dashStaminaCost);
+                    //decrement stamina. factor in regen if it's enabled
+                    if (_playerAttributes.IsRegenActive())
+                        _playerAttributes.ModifyStamina(-(_dashStaminaCost + _playerAttributes.GetStaminaRegen() * Time.deltaTime));
+                    else _playerAttributes.ModifyStamina(-_dashStaminaCost);
 
                     //Apply the dash force 
                     _playerRB.AddForce(_moveDirection * _dashForce * Time.deltaTime, ForceMode.Impulse);
@@ -239,6 +260,116 @@ public class PlayerController : MonoBehaviour
         return staminaCost <= _playerAttributes.GetStamina();
     }
 
+    private bool IsEnergyEnough(float energyCost)
+    {
+        return energyCost <= _playerAttributes.GetEnergy();
+    }
+
+    private void CastBarrier()
+    {
+        //Is the player casting a new barrier
+        if (_barrierInput && _isBarrierAbilityReady && !_isBarrierActive)
+        {
+            //Make sure we have enough energy
+            if (IsEnergyEnough(_initialBarrierEnergyCost))
+            {
+                //decrement the energy cost. Factor in the regen if it's enabled
+                if (_playerAttributes.IsRegenActive())
+                    _playerAttributes.ModifyEnergy(-(_initialBarrierEnergyCost + _playerAttributes.GetEnergyRegen() * Time.deltaTime));
+                else _playerAttributes.ModifyEnergy(-_initialBarrierEnergyCost);
+
+                //create the barrier
+                _isBarrierActive = true;
+
+                //cooldown the barrier ability
+                _isBarrierAbilityReady = false;
+                Invoke("ReadyBarrierAbility", _barrierCooldown);
+
+
+                //Enter the free barrier grace period
+                _isBarrierCurrentlyFree = true;
+                Invoke("ExitFreeBarrierGracePeriod", _freeBarrierGracePeriod);
+            }
+
+
+            //The barrier never materializes due to lack of energy
+            else
+            {
+                //trigger the insufficient energy UI feedback
+                _gameManager.TriggerInsufficientEnergyFeedback();
+            }
+        }
+
+
+        //Is the player is attempting to sustain a barrier
+        else if (_isBarrierActive && _barrierInput)
+        {
+            //if the barrier is currently free
+            if (_isBarrierCurrentlyFree)
+            {
+                //Suppress the player's passive energy regen
+                if (_playerAttributes.IsRegenActive())
+                    _playerAttributes.ModifyEnergy(-_playerAttributes.GetEnergyRegen() * Time.deltaTime);
+
+                //show drain feedback, even though the barrier is currently free :)
+                _gameManager.UpdateDrainingEnergyAnimationFeedback(true);
+            }
+
+
+            //Otherwise make sure we have enough energy if the barrier isn't free
+            else if (IsEnergyEnough(_barrierUpkeepEnergyCost) && !_isBarrierCurrentlyFree)
+            {
+                //Decrement energy. Factor in the player's regen if it's enabled
+                if (_playerAttributes.IsRegenActive())
+                    _playerAttributes.ModifyEnergy(-(_barrierUpkeepEnergyCost + _playerAttributes.GetEnergyRegen()) * Time.deltaTime);
+                else _playerAttributes.ModifyEnergy(-_barrierUpkeepEnergyCost * Time.deltaTime);
+
+                //Keep the draining state alive
+                _gameManager.UpdateDrainingEnergyAnimationFeedback(true);
+            }
+
+            
+            //If the player ran out of energy
+            else if (!IsEnergyEnough(_barrierUpkeepEnergyCost) && !_isBarrierCurrentlyFree)
+            {
+                //End the draining animation
+                _gameManager.UpdateDrainingEnergyAnimationFeedback(false);
+
+                //Trigger the insufficient energy feedback animation
+                _gameManager.TriggerInsufficientEnergyFeedback();
+
+                //Leave the active barrier state
+                _isBarrierActive = false;
+            }
+        }
+
+        //Is the player ending their barrier
+        else if (_isBarrierActive && !_barrierInput)
+        {
+            //End the draining animation
+            _gameManager.UpdateDrainingEnergyAnimationFeedback(false);
+
+            //Cancel any previous unfinished Invokes
+            if (_isBarrierCurrentlyFree)
+            {
+                _isBarrierCurrentlyFree = false;
+                CancelInvoke("ExitFreeBarrierGracePeriod");
+            }
+
+            //Deactivate the barrier
+            _isBarrierActive = false;
+        }
+    }
+
+    private void ReadyBarrierAbility()
+    {
+        _isBarrierAbilityReady = true;
+    }
+
+    private void ExitFreeBarrierGracePeriod()
+    {
+        _isBarrierCurrentlyFree = false;
+    }
 
     //External Utils
     public GameObject GetPlayer()

@@ -78,6 +78,10 @@ public class PlayerAttributes : MonoBehaviour
         if (_health == 0)
             _isDead = true;
 
+        //trigger feedback anim if health is full
+        if (_health == _maxHealth)
+            _gameManager.TriggerFillCompletedHealthFeedback();
+
     }
 
     private void SetEnergy(float newValue)
@@ -87,6 +91,10 @@ public class PlayerAttributes : MonoBehaviour
 
         //Update the energyBar
         _gameManager.UpdateEnergyBar(_energy / _maxEnergy);
+
+        //Show feedback if energy is full
+        if (_energy == _maxEnergy)
+            _gameManager.TriggerFillCompletedEnergyFeedback();
     }
 
     private void SetStamina(float newValue)
@@ -120,13 +128,13 @@ public class PlayerAttributes : MonoBehaviour
 
     private void RegenEnergy()
     {
-        if (_energy < _maxEnergy)
+        if (_energy < _maxEnergy && _energyRegen > 0)
             SetEnergy(_energy + _energyRegen * Time.deltaTime);
     }
 
     private void RegenStamina()
     {
-        if (_stamina < _maxStamina)
+        if (_stamina < _maxStamina && _staminaRegen > 0)
         SetStamina(_stamina + _staminaRegen * Time.deltaTime);
     }
 
@@ -174,6 +182,11 @@ public class PlayerAttributes : MonoBehaviour
             _isRegenEnabled = true;
     }
 
+    public bool IsRegenActive()
+    {
+        return _isRegenEnabled;
+    }
+
     public float GetHealth()
     {
         return _health;
@@ -202,6 +215,21 @@ public class PlayerAttributes : MonoBehaviour
     public float GetMaxStamina()
     {
         return _maxStamina;
+    }
+
+    public float GetHealthRegen()
+    {
+        return _healthRegen;
+    }
+
+    public float GetEnergyRegen()
+    {
+        return _energyRegen;
+    }
+
+    public float GetStaminaRegen()
+    {
+        return _staminaRegen;
     }
 
     public void ModifyHealth(float value)
