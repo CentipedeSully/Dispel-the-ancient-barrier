@@ -2,22 +2,23 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class GameManager: MonoBehaviour
+public class GameManager : MonoBehaviour
 {
     //Declarations
     [Header("Player Utilities")]
     [SerializeField] private InputReader _inputReader;
     [SerializeField] private PlayerController _playerController;
 
-    [Header("UI Utilities")]
-    [SerializeField] private GameObject _healthBar;
+    [Header("UI Attribute Display Utilities")]
+    [SerializeField] private GameObject _attributeBarsDisplay;
+    [SerializeField] private GameObject _healthbar;
     [SerializeField] private GameObject _energyBar;
     [SerializeField] private GameObject _staminaBar;
     [SerializeField] private GameObject _healthDisplay;
     [SerializeField] private GameObject _energyDisplay;
     [SerializeField] private GameObject _staminaDisplay;
 
-    [Header("Animation Utilities")]
+    [Header("UI Attribute Animation Utilities")]
     [SerializeField] private Animator _healthBarAnimator;
     [SerializeField] [Range(0, 1)] private float _lowHealthThreshold;
     [SerializeField] private string _healthLowParamName;
@@ -32,8 +33,22 @@ public class GameManager: MonoBehaviour
     [SerializeField] private string _staminaInsufficientParamName;
     [SerializeField] private string _staminaFillCompleteParamName;
 
-    //[SerializeField] private GameObject _darkFadeObject;
-    //[SerializeField] private GameObject _lightFadeObject;
+
+    [Header("UI Controls Display Utilities")]
+    [SerializeField] private GameObject _controlsDisplay;
+    [SerializeField] private GameObject _upKeyHighlight;
+    [SerializeField] private GameObject _leftKeyHighlight;
+    [SerializeField] private GameObject _downKeyHighlight;
+    [SerializeField] private GameObject _rightKeyHighlight;
+    [SerializeField] private GameObject _barrierKeyHighlight;
+    [SerializeField] private GameObject _dashKeyHighlight;
+    [SerializeField] private GameObject _jumpKeyHighlight;
+
+    //Monobehaviors
+    private void Update()
+    {
+        ShowButtonControlInputs();
+    }
 
 
     //Internal Utils
@@ -67,6 +82,27 @@ public class GameManager: MonoBehaviour
             display.SetActive(false);
     }
 
+    public void UpdateButtonHighlight(bool isButtonPressed, GameObject highlight)
+    {
+        if (highlight != null)
+            highlight.SetActive(isButtonPressed);
+    }
+
+    private void ShowButtonControlInputs()
+    {
+        if (_controlsDisplay.activeSelf)
+        {
+            UpdateUpKeyHighlight();
+            UpdateLeftKeyHighlight();
+            UpdateDownKeyHighlight();
+            UpdateRightKeyHighlight();
+
+            UpdateBarrierKeyHighlight();
+            UpdateDashKeyHighlight();
+            UpdateJumpKeyHighlight();
+        }
+    }
+
 
     //External Utils
     public InputReader GetInputReader()
@@ -82,7 +118,7 @@ public class GameManager: MonoBehaviour
     public void UpdateHealthBar(float newRelativePercentage)
     {
         //Update the bar's size
-        SetBar(newRelativePercentage, _healthBar);
+        SetBar(newRelativePercentage, _healthbar);
 
         //Update the bar's feedback state
         bool _isHealthLow = newRelativePercentage <= _lowHealthThreshold;
@@ -99,41 +135,12 @@ public class GameManager: MonoBehaviour
         SetBar(newRelativePercentage, _staminaBar);
     }
 
-    public void ShowAllDisplays()
-    {
-        ShowDisplay(_healthDisplay);
-        ShowDisplay(_staminaDisplay);
-        ShowDisplay(_energyDisplay);
-    }
-
-    public void HideAllDisplays()
-    {
-        HideDisplay(_healthDisplay);
-        HideDisplay(_staminaDisplay);
-        HideDisplay(_energyDisplay);
-    }
-
-    public void ShowHealth()
-    {
-        ShowDisplay(_healthDisplay);
-    }
-
-    public void ShowEnergy()
-    {
-        ShowDisplay(_energyDisplay);
-    }
-
-    public void ShowStamina()
-    {
-        ShowDisplay(_staminaDisplay);
-    }
 
 
     public void TriggerFillCompletedHealthFeedback()
     {
         _healthBarAnimator.SetTrigger(_healthFillCompleteParamName);
     }
-
 
     public void TriggerInsufficientEnergyFeedback()
     {
@@ -160,7 +167,51 @@ public class GameManager: MonoBehaviour
     {
         _staminaBarAnimator.SetTrigger(_staminaFillCompleteParamName);
     }
-    
+
+
+
+    public void UpdateUpKeyHighlight()
+    {
+        bool isButtonPressed = _inputReader.GetMoveInput().y > 0;
+        UpdateButtonHighlight(isButtonPressed, _upKeyHighlight);
+    }
+
+    public void UpdateLeftKeyHighlight()
+    {
+        bool isButtonPressed = _inputReader.GetMoveInput().x < 0;
+        UpdateButtonHighlight(isButtonPressed, _leftKeyHighlight);
+    }
+
+    public void UpdateDownKeyHighlight()
+    {
+        bool isButtonPressed = _inputReader.GetMoveInput().y < 0;
+        UpdateButtonHighlight(isButtonPressed, _downKeyHighlight);
+    }
+
+    public void UpdateRightKeyHighlight()
+    {
+        bool isButtonPressed = _inputReader.GetMoveInput().x > 0;
+        UpdateButtonHighlight(isButtonPressed, _rightKeyHighlight);
+    }
+
+    public void UpdateBarrierKeyHighlight()
+    {
+        UpdateButtonHighlight(_inputReader.GetBarrierInput(), _barrierKeyHighlight);
+    }
+
+    public void UpdateDashKeyHighlight()
+    {
+        UpdateButtonHighlight(_inputReader.GetDashInput(), _dashKeyHighlight);
+    }
+
+    public void UpdateJumpKeyHighlight()
+    {
+        UpdateButtonHighlight(_inputReader.GetJumpInput(), _jumpKeyHighlight);
+    }
+
+
+
+
     //Debugging
 
 
