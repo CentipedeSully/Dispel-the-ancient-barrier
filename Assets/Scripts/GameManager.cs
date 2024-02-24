@@ -104,6 +104,8 @@ public class GameManager : MonoBehaviour
     }
 
 
+
+
     //External Utils
     public InputReader GetInputReader()
     {
@@ -209,8 +211,15 @@ public class GameManager : MonoBehaviour
         UpdateButtonHighlight(_inputReader.GetJumpInput(), _jumpKeyHighlight);
     }
 
+    public void ShakeScreen(float magnitude, float duration)
+    {
+        ConsoleLogger.LogMessage(this.name,"ScreenShake Requested!");
+    }
 
-
+    public void StutterTime(float duration)
+    {
+        ConsoleLogger.LogMessage(this.name, "Time Stutter Requested!");
+    }
 
     //Debugging
 

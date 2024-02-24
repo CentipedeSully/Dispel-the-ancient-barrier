@@ -16,6 +16,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private PlayerAttributes _playerAttributes;
 
     [Header("Movement Utilities")]
+    [SerializeField] private bool _isStunned = false;
     [SerializeField] private bool _isMovementEnabled = true;
     [SerializeField] private int _moveSpeed;
     [SerializeField] private int _gravityModifier;
@@ -105,7 +106,7 @@ public class PlayerController : MonoBehaviour
 
     private void MovePlayer()
     {
-        if (_isMovementEnabled && _playerRB != null)
+        if (_isMovementEnabled && _playerRB != null && !_isStunned)
         {
             //Apply the velocity
             _playerRB.AddForce(_moveSpeed * Time.deltaTime * _moveDirection);
@@ -115,7 +116,7 @@ public class PlayerController : MonoBehaviour
     private void JumpPlayer()
     {
         //are we legally trying to enter the jumpstate?
-        if (_isOnGround && _inputReader.GetJumpInput() && _isJumpReady && !_isJumping)
+        if (_isOnGround && _inputReader.GetJumpInput() && _isJumpReady && !_isJumping && !_isStunned)
         {
             //Check if we have enough stamina
             if (IsStaminaEnough(_jumpStaminaCost))
@@ -146,14 +147,14 @@ public class PlayerController : MonoBehaviour
         }
 
         //are we currently in the jump state (while trying to prolong the jump)?
-        else if (_inputReader.GetJumpInput() && _isJumping)
+        else if (_inputReader.GetJumpInput() && _isJumping && !_isStunned)
         {
             //Assist the jump via levitation
             _playerRB.AddForce(Vector3.up * _jumpLevitationForce * Time.deltaTime);
         }
 
         //are we discontinuing the jump early?
-        else if (!_inputReader.GetJumpInput() && _isJumping)
+        else if ((!_inputReader.GetJumpInput() && _isJumping) || (_isJumping && _isStunned))
         {
             //Exit the jump early
             CancelInvoke("EndJump");
@@ -163,7 +164,7 @@ public class PlayerController : MonoBehaviour
 
     private void DashPlayer()
     {
-        if (_playerRB != null && _isOnGround && _isMovementEnabled && _isDashReady && _inputReader.GetDashInput())
+        if (_playerRB != null && _isOnGround && _isMovementEnabled && _isDashReady && _inputReader.GetDashInput() && !_isStunned)
         {
             //ONLY DASH IF THE PLAYER IS ALREADY MOVING!!
             if (_moveDirection.magnitude > 0)
@@ -268,7 +269,7 @@ public class PlayerController : MonoBehaviour
     private void CastBarrier()
     {
         //Is the player casting a new barrier
-        if (_barrierInput && _isBarrierAbilityReady && !_isBarrierActive)
+        if (_barrierInput && _isBarrierAbilityReady && !_isBarrierActive && !_isStunned)
         {
             //Make sure we have enough energy
             if (IsEnergyEnough(_initialBarrierEnergyCost))
@@ -302,7 +303,7 @@ public class PlayerController : MonoBehaviour
 
 
         //Is the player is attempting to sustain a barrier
-        else if (_isBarrierActive && _barrierInput)
+        else if (_isBarrierActive && _barrierInput && !_isStunned)
         {
             //if the barrier is currently free
             if (_isBarrierCurrentlyFree)
@@ -344,7 +345,7 @@ public class PlayerController : MonoBehaviour
         }
 
         //Is the player ending their barrier
-        else if (_isBarrierActive && !_barrierInput)
+        else if ((_isBarrierActive && !_barrierInput) || _isStunned && _isBarrierActive)
         {
             //End the draining animation
             _gameManager.UpdateDrainingEnergyAnimationFeedback(false);
@@ -371,6 +372,11 @@ public class PlayerController : MonoBehaviour
         _isBarrierCurrentlyFree = false;
     }
 
+    private void ExitStun()
+    {
+        _isStunned = false;
+    }
+
     //External Utils
     public GameObject GetPlayer()
     {
@@ -389,6 +395,14 @@ public class PlayerController : MonoBehaviour
         }
             
     }
+
+
+    public void StunPlayer(float duration)
+    {
+        _isStunned = true;
+        Invoke("ExitStun", duration);
+    }
+
 
 
     //Debugging

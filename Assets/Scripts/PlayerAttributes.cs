@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PlayerAttributes : MonoBehaviour
+public class PlayerAttributes : MonoBehaviour, IDamageable
 {
     //Declarations
     [Header("External References")]
@@ -12,12 +12,20 @@ public class PlayerAttributes : MonoBehaviour
     [Header("Player Attributes")]
     [SerializeField] private bool _isDead = false;
     [SerializeField] private bool _isRegenEnabled = true;
-    //[SerializeField] private bool _isStunned = false;
 
     [Header("Health")]
     [SerializeField] private float _health = 100;
     [SerializeField] private float _maxHealth = 100;
     [SerializeField] private float _healthRegen = 0;
+    [SerializeField] private bool _isInvincible = false;
+    [Tooltip("Allows the player some grace in between hits taken. Helps the player escape stun locks.")]
+    [SerializeField] private float _invincibleRecoveryDuration = .15f;
+    [SerializeField] private Animator _playerAnimator;
+    [SerializeField] private string _onHurtTriggerParamName;
+    [SerializeField] private string _invincibleStateParamName;
+    [SerializeField] private float _screenShakeOnHitDuration;
+    [SerializeField] private float _screenShakeOnHitMagnitude;
+    [SerializeField] private float _timeStutterOnHitMagnitude;
 
     [Header("Energy")]
     [SerializeField] private float _energy = 100;
@@ -81,7 +89,6 @@ public class PlayerAttributes : MonoBehaviour
         //trigger feedback anim if health is full
         if (_health == _maxHealth)
             _gameManager.TriggerFillCompletedHealthFeedback();
-
     }
 
     private void SetEnergy(float newValue)
@@ -138,6 +145,13 @@ public class PlayerAttributes : MonoBehaviour
         SetStamina(_stamina + _staminaRegen * Time.deltaTime);
     }
 
+    private void EndInvincibility()
+    {
+        _isInvincible = false;
+
+        //exit invinc anim
+        _playerAnimator.SetBool(_invincibleStateParamName, false);
+    }
 
 
     //External Utils
@@ -235,6 +249,28 @@ public class PlayerAttributes : MonoBehaviour
     public void ModifyHealth(float value)
     {
         SetHealth(_health + value);
+
+        //Trigger negatve effects if the player took damage
+        if (value < 0)
+        {
+            //trigger screen shake
+            _gameManager.ShakeScreen(_screenShakeOnHitMagnitude, _screenShakeOnHitDuration);
+
+            //trigger time studder
+            _gameManager.StutterTime(_timeStutterOnHitMagnitude);
+
+            //trigger damaged anim
+            _playerAnimator.SetTrigger(_onHurtTriggerParamName);
+
+
+            //enter invinc anim
+            _playerAnimator.SetBool(_invincibleStateParamName, true);
+
+            //enter invincible recovery state
+            _isInvincible = true;
+            Invoke("EndInvincibility", _invincibleRecoveryDuration);
+
+        }
     }
 
     public void ModifyEnergy(float value)
@@ -263,7 +299,16 @@ public class PlayerAttributes : MonoBehaviour
         SetMaxStamina(_maxStamina + value);
     }
 
+    public void SufferStun(float stunDuration)
+    {
+        //lock player actions
+        _playerController.StunPlayer(stunDuration);
+    }
 
+    public bool IsInInvincibilityRecovery()
+    {
+        return _isInvincible;
+    }
 
 
     //Debugging
