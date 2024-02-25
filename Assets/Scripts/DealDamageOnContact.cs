@@ -36,7 +36,7 @@ public class DealDamageOnContact : MonoBehaviour
             _validTags = new List<string>();
     }
 
-    private void OnCollisionEnter(Collision collision)
+    private void OnCollisionStay(Collision collision)
     {
         if (IsCollisionValid(collision))
         {

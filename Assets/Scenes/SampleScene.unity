@@ -5101,7 +5101,7 @@ MonoBehaviour:
   _onHurtTriggerParamName: onDamaged
   _invincibleStateParamName: inInvincRecovery
   _screenShakeOnHitDuration: 0.1
-  _screenShakeOnHitMagnitude: 1
+  _screenShakeOnHitMagnitude: 0.25
   _timeStutterOnHitMagnitude: 0
   _energy: 100
   _maxEnergy: 100
