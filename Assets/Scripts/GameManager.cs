@@ -8,6 +8,7 @@ public class GameManager : MonoBehaviour
     [Header("Player Utilities")]
     [SerializeField] private InputReader _inputReader;
     [SerializeField] private PlayerController _playerController;
+    [SerializeField] private CamFocusController _cameraFocus;
 
     [Header("UI Attribute Display Utilities")]
     [SerializeField] private GameObject _attributeBarsDisplay;
@@ -213,7 +214,7 @@ public class GameManager : MonoBehaviour
 
     public void ShakeScreen(float magnitude, float duration)
     {
-        ConsoleLogger.LogMessage(this.name,"ScreenShake Requested!");
+        _cameraFocus.TriggerCameraShake(duration, magnitude);
     }
 
     public void StutterTime(float duration)
