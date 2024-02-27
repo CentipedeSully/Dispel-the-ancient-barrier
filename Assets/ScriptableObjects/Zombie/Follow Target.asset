@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7fb08e46628e46efb691851fc1bb6d8d, type: 3}
+  m_Name: Follow Target
+  m_EditorClassIdentifier: 
+  transitions:
+  - state: {fileID: 11400000, guid: 1942098954f71db45a587d9fab09d298, type: 2}
+    agentDistanceComparison: 2
+    agentDistance: 3
+    targetDistanceComparison: 0
+    targetDistance: 0
+    waitThenSetState: 0
+    waitThenSetStateTime: 0
+  speedScale: 1
+  updateInterval: 0.1
