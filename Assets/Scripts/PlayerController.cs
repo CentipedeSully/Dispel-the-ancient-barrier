@@ -27,12 +27,12 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float _dashCooldown = .25f;
     [Tooltip("This script automatically offsets this value by the player's respective Regen attribute.")]
     [SerializeField] [Min(0)] private float _dashStaminaCost;
-    [SerializeField] private bool _isDashReady = true;
+    private bool _isDashReady = true;
 
     [Header("Jump Utilities")]
     [Tooltip("This script automatically offsets this value by the player's respective Regen attribute.")]
     [SerializeField] [Min(0)] private float _jumpStaminaCost;
-    [SerializeField] private bool _isOnGround = false;
+    private bool _isOnGround = false;
     [SerializeField] private Transform _feetPosition;
     [Tooltip("Starting from the feet, how far down will we check for solid ground?")]
     [SerializeField] private float _groundDetectionDepth = .2f;
@@ -40,8 +40,8 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float _groundDetectionSurfaceArea = .5f;
     [SerializeField] private LayerMask _groundLayerMask;
     [SerializeField] private Color _groundDetectionGizmoColor = Color.magenta;
-    [SerializeField] private bool _isJumping = false;
-    [SerializeField] private bool _isJumpReady = true;
+    private bool _isJumping = false;
+    private bool _isJumpReady = true;
     [SerializeField] private int _jumpForce;
     [SerializeField] private int _jumpLevitationForce;
     [SerializeField] private float _jumpLevitationDuration;
@@ -53,10 +53,27 @@ public class PlayerController : MonoBehaviour
     [Tooltip("This script automatically offsets this value by the player's respective Regen attribute.")]
     [SerializeField] [Min(0)] private float _barrierUpkeepEnergyCost;
     [SerializeField] private float _freeBarrierGracePeriod;
-    [SerializeField] private bool _isBarrierCurrentlyFree = false;
-    [SerializeField] private bool _isBarrierActive = false;
-    [SerializeField] private bool _isBarrierAbilityReady = true;
+    private bool _isBarrierCurrentlyFree = false;
+    private bool _isBarrierActive = false;
+    private bool _isBarrierAbilityReady = true;
     [SerializeField] private float _barrierCooldown = .3f;
+    [SerializeField] private float _barrierRadius;
+    [Tooltip("This is an impulse force")]
+    [SerializeField] private float _barrierPushForce;
+    [SerializeField] [Min(0)] private float _barrierDamage;
+    [SerializeField] [Min(0)] private float _barrierOnContactDrain;
+    [Tooltip("This is an impulse force. Note the recoil may add up if deflecting many entities at once ;3")]
+    [SerializeField] [Min(0)] private float _barrierRecoilMagnitude;
+    [SerializeField] private Color _barrierGizmoColor = Color.blue;
+    [SerializeField] private LayerMask _barrierRepulsableLayerMask;
+    [SerializeField] private List<string> _validBarrierCollisionTags;
+    private Vector3 _barrierRecoilVector;
+    private Dictionary<int, float> _repulsedEntitiesDict; // holds (rigidbody ID, remainingCooldown) key-value pairs
+    [Tooltip("How long will the barrier wait before repulsing a previously pushed entity. " +
+        "Used to avoid re-Repulsing entities that've already been pushed back but have failed to get out of the barrier=s radius")]
+    [SerializeField] [Min(.05f)] private float _instanceRepulsionCooldown;
+
+
 
 
     //Monos
@@ -65,6 +82,12 @@ public class PlayerController : MonoBehaviour
         _inputReader = _gameManager.GetInputReader();
         if (_playerObject != null)
             _playerRB = _playerObject.GetComponent<Rigidbody>();
+
+        //Initialize the list if it hasn't yet been defined;
+        if (_validBarrierCollisionTags == null)
+            _validBarrierCollisionTags = new List<string>();
+
+        _repulsedEntitiesDict = new Dictionary<int, float>();
         
     }
 
@@ -74,6 +97,8 @@ public class PlayerController : MonoBehaviour
         DetectGround();
 
         CastBarrier();
+        TickInternalRepulsions();
+        RepulseEntitiesWithinBarrier();
     }
 
     private void FixedUpdate()
@@ -83,12 +108,13 @@ public class PlayerController : MonoBehaviour
         DashPlayer();
         MovePlayer();
         JumpPlayer();
-        //Clamp the velocity
+        ApplyRecoil();
     }
 
     private void OnDrawGizmosSelected()
     {
         DrawJumpDetectionGizmo();
+        DrawBarrierGizmo();
     }
 
     //Internal Utils
@@ -377,6 +403,124 @@ public class PlayerController : MonoBehaviour
         _isStunned = false;
     }
 
+    private bool IsDetectionValid(Collider detectedCollider)
+    {
+        if (detectedCollider == null)
+            return false;
+
+        if (_validBarrierCollisionTags.Contains(detectedCollider.tag))
+            return true;
+        else return false;
+    }
+
+    private void RepulseEntitiesWithinBarrier()
+    {
+        if (_isBarrierActive)
+        {
+            //Cast a sphere on player's position, and catch all detections
+            Collider[] detectedColliders = Physics.OverlapSphere(transform.position, _barrierRadius, _barrierRepulsableLayerMask);
+
+            bool hasRepulsionOccured = false;
+            bool hasDamageBeenDealth = false;
+
+            for (int i = 0; i < detectedColliders.Length; i++)
+            {
+                if (IsDetectionValid(detectedColliders[i]))
+                {
+                    Rigidbody entityRB = detectedColliders[i].GetComponent<Rigidbody>();
+
+                    //If this entity has a rigidbody to push..
+                    if (entityRB != null)
+                    {
+                        //make sure this entity hasn't already been repulsed
+                        if (!_repulsedEntitiesDict.ContainsKey(entityRB.GetInstanceID()))
+                        {
+                            //Add a new record of the entity
+                            _repulsedEntitiesDict.Add(entityRB.GetInstanceID(), _instanceRepulsionCooldown);
+
+                            //get the entity's directional distance vector
+                            Vector3 vectorFromSelfToEntity = (entityRB.transform.position - transform.position);
+
+                            //ignore the y if it's below 0. This way the entity won't get stuck on the floor
+                            vectorFromSelfToEntity = new Vector3(vectorFromSelfToEntity.x, Mathf.Max(vectorFromSelfToEntity.y, 0),vectorFromSelfToEntity.z).normalized;
+
+                            //repulse entity
+                            entityRB.AddForce(vectorFromSelfToEntity * _barrierPushForce * Time.deltaTime, ForceMode.Impulse);
+
+                            //Accrue the kickback force from pushing the entity. 
+                            _barrierRecoilVector += -vectorFromSelfToEntity; //make sure it's negative
+
+                            hasRepulsionOccured = true;
+                        }
+                    }
+
+
+                    /* 
+                    //if entity is damageable...
+                    IDamageable entityAttributes = detectedColliders[i].GetComponent<IDamageable>();
+
+                    if (entityAttributes != null)
+                    {
+                        //Deal damage to the detection's damageable attribute, if it exists
+                        detectedColliders[i].GetComponent<IDamageable>()?.ModifyHealth(_barrierDamage);
+
+                        //Set stun
+                        detectedColliders[i].GetComponent<IDamageable>()?.SufferStun(_barrierDamage);
+
+                        hasDamageBeenDealt = true;
+                    }
+                    */
+
+                    //trigger feedback and pay costs if anything has occured
+                    if (hasDamageBeenDealth || hasRepulsionOccured)
+                    {
+                        //trigger repulsion feedback anim
+                        //...
+
+                        //reduce the player's energy if the barrier isn't free
+                        if (!_isBarrierCurrentlyFree)
+                            _playerAttributes.ModifyEnergy(-_barrierOnContactDrain);
+                    }
+                }
+            }
+        }
+
+    }
+
+    private void ApplyRecoil()
+    {
+        if (_barrierRecoilVector.magnitude > 0)
+        {
+            //repulse player by the accrued recoil
+            _playerRB.AddForce(_barrierRecoilVector * _barrierRecoilMagnitude * Time.deltaTime, ForceMode.Impulse);
+
+            //clear the accrued recoil
+            _barrierRecoilVector = Vector3.zero;
+        }
+    }
+
+    private void TickInternalRepulsions()
+    {
+        //create a temporary, updated collection of records. [Dictionaries can't be modified while being iterated]
+        Dictionary<int, float> updatedRecordsDict = new Dictionary<int, float>();
+
+        //populate the temporary records ceollection with newly updated records
+        foreach( KeyValuePair<int,float> repulsedRecord in _repulsedEntitiesDict)
+        {
+            float newCooldownValue = _repulsedEntitiesDict[repulsedRecord.Key] - Time.deltaTime;
+
+            //only add an updated version of this record if its new cooldown isn't expired
+            if (newCooldownValue > 0)
+                updatedRecordsDict.Add(repulsedRecord.Key, newCooldownValue);
+        }
+
+        //overwrite the original dict
+        _repulsedEntitiesDict = updatedRecordsDict;
+            
+    }
+
+
+
     //External Utils
     public GameObject GetPlayer()
     {
@@ -421,6 +565,19 @@ public class PlayerController : MonoBehaviour
         Gizmos.DrawWireCube(detectionCubeOrigin, detectionCubeDimensions);
     }
 
+    private void DrawBarrierGizmo()
+    {
+        //only draw when the barrier is up
+        if (_isBarrierActive)
+        {
+            //set the color
+            Gizmos.color = _barrierGizmoColor;
 
+            //draw the sphere
+            Gizmos.DrawWireSphere(transform.position, _barrierRadius);
+        }
+
+
+    }
 
 }
