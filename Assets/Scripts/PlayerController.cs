@@ -439,10 +439,10 @@ public class PlayerController : MonoBehaviour
                             _repulsedEntitiesDict.Add(entityRB.GetInstanceID(), _instanceRepulsionCooldown);
 
                             //get the entity's directional distance vector
-                            Vector3 vectorFromSelfToEntity = (entityRB.transform.position - transform.position).normalized;
+                            Vector3 vectorFromSelfToEntity = (entityRB.transform.position - transform.position);
 
-                            //ignore the z if it's below 0. This way the entity won't get stuck on the floor
-                            vectorFromSelfToEntity = new Vector3(vectorFromSelfToEntity.x, vectorFromSelfToEntity.y, Mathf.Max(vectorFromSelfToEntity.z, 0));
+                            //ignore the y if it's below 0. This way the entity won't get stuck on the floor
+                            vectorFromSelfToEntity = new Vector3(vectorFromSelfToEntity.x, Mathf.Max(vectorFromSelfToEntity.y, 0),vectorFromSelfToEntity.z).normalized;
 
                             //repulse entity
                             entityRB.AddForce(vectorFromSelfToEntity * _barrierPushForce * Time.deltaTime, ForceMode.Impulse);
