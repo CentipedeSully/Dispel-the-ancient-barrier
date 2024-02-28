@@ -14,6 +14,7 @@ public class PlayerController : MonoBehaviour
     private Vector3 _moveDirection;
     private bool _barrierInput;
     [SerializeField] private PlayerAttributes _playerAttributes;
+    [SerializeField] private GameObject _barrierObject;
 
     [Header("Movement Utilities")]
     [SerializeField] private bool _isStunned = false;
@@ -97,6 +98,7 @@ public class PlayerController : MonoBehaviour
         DetectGround();
 
         CastBarrier();
+        ControlBarrierVisibility();
         TickInternalRepulsions();
         RepulseEntitiesWithinBarrier();
     }
@@ -517,6 +519,22 @@ public class PlayerController : MonoBehaviour
         //overwrite the original dict
         _repulsedEntitiesDict = updatedRecordsDict;
             
+    }
+
+    private void ControlBarrierVisibility()
+    {
+        if (_isBarrierActive)
+        {
+            //show barrier if it's not showing
+            if (!_barrierObject.activeSelf)
+                _barrierObject.SetActive(true);
+        }
+        else
+        {
+            //hide barrier if it's still showing
+            if (_barrierObject.activeSelf)
+                _barrierObject.SetActive(false);
+        }
     }
 
 
