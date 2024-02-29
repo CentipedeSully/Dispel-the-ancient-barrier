@@ -11,7 +11,7 @@ public class MonoMachine : MonoBehaviour
     
     [field: SerializeField, Header("References")] public NavMeshAgent Agent { get; private set; }
     [field: SerializeField] public Transform Target { get; private set; }
-    [field: SerializeField] public GameObject AttackObject { get; private set; }
+    [field: SerializeField] public EnemyAttack AttackObject { get; private set; }
     
     [field: SerializeField, Header("Inspector")] public string StateName { get; private set; }
 

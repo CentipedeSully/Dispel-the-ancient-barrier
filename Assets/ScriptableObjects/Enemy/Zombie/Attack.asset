@@ -14,11 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   transitions:
   - state: {fileID: 11400000, guid: cdb3ff702dc8b994591908decdd07bf1, type: 2}
+    stateEvents: 00000000
     agentDistanceComparison: 4
     agentDistance: 0
     targetDistanceComparison: 4
     targetDistance: 0
-    waitThenSetState: 1
-    waitThenSetStateTime: 2
+    waitThenSetState: 0
+    waitThenSetStateTime: 0
   attackAfter: 1
-  removeAttackAfter: 0.1

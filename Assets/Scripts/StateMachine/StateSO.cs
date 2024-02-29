@@ -10,6 +10,8 @@ public abstract class StateSO : ScriptableObject
 
 public class StateHandler<TState> : IState where TState : StateSO
 {
+    protected List<StateTransition> _transitions;
+    
     protected readonly MonoMachine _machine;
     protected readonly TState _data;
     
@@ -18,7 +20,13 @@ public class StateHandler<TState> : IState where TState : StateSO
         _machine = machine;
         _data = stateSo;
 
-        stateSo.transitions.ForEach(transition => transition.Start(_machine));
+        _transitions = new List<StateTransition>();
+        stateSo.transitions.ForEach(transition =>
+        {
+            var newItem = new StateTransition(transition);
+            newItem.Start(machine);
+            _transitions.Add(newItem);
+        });
     }
 
     public virtual void Update()
@@ -31,10 +39,7 @@ public class StateHandler<TState> : IState where TState : StateSO
         
     }
 
-    public virtual void Exit()
-    {
-        _data.transitions.ForEach(transition => transition.Stop());
-    }
+    public virtual void Exit() => _transitions.ForEach(transition => transition.Stop());
 
     public string Name => _data.name;
 }
@@ -45,10 +50,4 @@ public interface IState
     void FixedUpdate();
     void Exit();
     string Name { get; }
-}
-
-public class NamedAction
-{
-    public string name;
-    public Action action;
 }

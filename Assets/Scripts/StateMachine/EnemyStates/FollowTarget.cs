@@ -14,35 +14,34 @@ public class FollowTarget : StateSO
 
 public class FollowTargetHandler : StateHandler<FollowTarget>
 {
-    private Coroutine _followRoutine;
     private float _cachedSpeed;
+    private float _timer;
     
     public FollowTargetHandler(MonoMachine machine, FollowTarget data) : base(machine, data)
     {
         machine.Agent.isStopped = false;
         _cachedSpeed = machine.Agent.speed;
         machine.Agent.speed = _cachedSpeed * data.speedScale;
-        
-        _followRoutine = machine.StartCoroutine(FollowRoutine());
+        _timer = 0;
+    }
+
+    public override void Update()
+    {
+        base.Update();
+
+        if (_timer > 0)
+        {
+            _timer -= Time.deltaTime;
+            return;
+        }
+
+        _timer += _data.updateInterval;
+        _machine.Agent.SetDestination(_machine.Target.position);
     }
 
     public override void Exit()
     {
         base.Exit();
         _machine.Agent.speed = _cachedSpeed;
-        _machine.StopCoroutine(_followRoutine);
-    }
-
-    private IEnumerator FollowRoutine()
-    {
-        NavMeshAgent agent = _machine.Agent;
-        
-        while (true)
-        {
-            agent.SetDestination(_machine.Target.position);
-            yield return new WaitForSeconds(_data.updateInterval);
-        }
-        
-        // ReSharper disable once IteratorNeverReturns
     }
 }

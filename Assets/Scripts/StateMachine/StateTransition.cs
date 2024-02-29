@@ -7,6 +7,8 @@ using UnityEngine;
 public class StateTransition
 {
     public StateSO state;
+
+    public List<StateEvent> stateEvents;
     
     public ConditionalsComparison agentDistanceComparison;
     public float agentDistance;
@@ -20,12 +22,26 @@ public class StateTransition
 
     protected List<Coroutine> _routines = new List<Coroutine>();
 
+    public StateTransition(StateTransition transition)
+    {
+        state = transition.state;
+        stateEvents = transition.stateEvents;
+        agentDistanceComparison = transition.agentDistanceComparison;
+        agentDistance = transition.agentDistance;
+        targetDistanceComparison = transition.targetDistanceComparison;
+        targetDistance = transition.targetDistance;
+        waitThenSetState = transition.waitThenSetState;
+        waitThenSetStateTime = transition.waitThenSetStateTime;
+    }
+
     public void Start(MonoMachine machine)
     {
         _invokedOnce = false;
+        
         _machine = machine;
         _routines.Add(machine.StartCoroutine(CheckComparisons()));
         _routines.Add(machine.StartCoroutine(WaitThenSetState()));
+        stateEvents.ForEach(Listen);
     }
 
     public void Stop()
@@ -36,6 +52,8 @@ public class StateTransition
                 _machine.StopCoroutine(routine);
         });
         _routines.Clear();
+        
+        stateEvents.ForEach(StopListening);
     }
 
     public void SetState()
@@ -47,6 +65,27 @@ public class StateTransition
         _machine.SetState(state);
     }
 
+    private void Listen(StateEvent stateEvent)
+    {
+        switch (stateEvent)
+        {
+            case StateEvent.ON_FINISH_ATTACK:
+                _machine.AttackObject.onOver.AddListener(SetState);
+                break;
+        }
+    }
+
+    private void StopListening(StateEvent stateEvent)
+    {
+        switch (stateEvent)
+        {
+            case StateEvent.ON_FINISH_ATTACK:
+                _machine.AttackObject.onOver.RemoveListener(SetState);
+                break;
+        }
+    }
+    
+    
     public virtual void SetState<T>(T _) => SetState();
 
     private IEnumerator CheckFor(Func<bool> condition)
@@ -122,4 +161,9 @@ public enum ConditionalsComparison
     LESS_THAN,
     EQUAL,
     HALT
+}
+
+public enum StateEvent
+{
+    ON_FINISH_ATTACK
 }

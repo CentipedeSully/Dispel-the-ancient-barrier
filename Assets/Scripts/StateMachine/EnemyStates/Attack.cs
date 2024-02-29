@@ -7,7 +7,6 @@ public class Attack : StateSO
     // This is a wrong implementation, this should be done along side the animation
     [Header("Attack Settings")]
     public float attackAfter = 1f;
-    public float removeAttackAfter = 0.1f;
     
     public override IState Initialize(MonoMachine machine) => new AttackHandler(machine, this);
 }
@@ -25,7 +24,6 @@ public class AttackHandler : StateHandler<Attack>
     public override void Exit()
     {
         base.Exit();
-        _machine.AttackObject.SetActive(false);
         if (_attackRoutine != null)
             _machine.StopCoroutine(_attackRoutine);
     }
@@ -33,10 +31,8 @@ public class AttackHandler : StateHandler<Attack>
     protected virtual IEnumerator AttackRoutine()
     {
         yield return new WaitForSeconds(_data.attackAfter);
-        _machine.AttackObject.SetActive(true);
-        
-        yield return new WaitForSeconds(_data.removeAttackAfter);
-        _machine.AttackObject.SetActive(false);
+        _machine.AttackObject.Target = _machine.Target;
+        _machine.AttackObject.BeginAttack();
         
         _attackRoutine = null;
     }
