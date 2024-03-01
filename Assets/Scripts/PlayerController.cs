@@ -73,7 +73,9 @@ public class PlayerController : MonoBehaviour
     [Tooltip("How long will the barrier wait before repulsing a previously pushed entity. " +
         "Used to avoid re-Repulsing entities that've already been pushed back but have failed to get out of the barrier=s radius")]
     [SerializeField] [Min(.05f)] private float _instanceRepulsionCooldown;
-
+    [SerializeField] [Min(0)] private float _screenShakeMagnitude;
+    [SerializeField] [Min(0)] private float _screenShakeDuration;
+    [SerializeField] [Min(0)] private float _timeStopDuration;
 
 
 
@@ -446,8 +448,17 @@ public class PlayerController : MonoBehaviour
                             //ignore the y if it's below 0. This way the entity won't get stuck on the floor
                             vectorFromSelfToEntity = new Vector3(vectorFromSelfToEntity.x, Mathf.Max(vectorFromSelfToEntity.y, 0),vectorFromSelfToEntity.z).normalized;
 
+                            //Log the magnitude of the vector, for debugging
+                            ConsoleLogger.LogMessage(this.name, $"Entity direction Vector magnitude: {vectorFromSelfToEntity.magnitude}");
+
                             //repulse entity
                             entityRB.AddForce(vectorFromSelfToEntity * _barrierPushForce * Time.deltaTime, ForceMode.Impulse);
+
+                            //screenshake!
+                            _gameManager.ShakeScreen(_screenShakeMagnitude, _screenShakeDuration);
+
+                            //timestop!
+                            _gameManager.StutterTime(_timeStopDuration);
 
                             //Accrue the kickback force from pushing the entity. 
                             _barrierRecoilVector += -vectorFromSelfToEntity; //make sure it's negative
