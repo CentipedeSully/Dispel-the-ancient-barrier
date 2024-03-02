@@ -1,9 +1,10 @@
-﻿using System;using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 public abstract class StateSO : ScriptableObject
 {
     public List<StateTransition> transitions;
+    public string animationName;
     
     public abstract IState Initialize(MonoMachine machine);
 }
@@ -27,6 +28,8 @@ public class StateHandler<TState> : IState where TState : StateSO
             newItem.Start(machine);
             _transitions.Add(newItem);
         });
+        
+        _machine.Animator.SetTrigger(stateSo.animationName);
     }
 
     public virtual void Update()

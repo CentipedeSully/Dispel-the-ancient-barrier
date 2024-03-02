@@ -21,4 +21,5 @@ MonoBehaviour:
     targetDistance: 0
     waitThenSetState: 0
     waitThenSetStateTime: 0
+  animationName: Attack
   attackAfter: 1

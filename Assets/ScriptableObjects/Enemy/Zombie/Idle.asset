@@ -21,3 +21,4 @@ MonoBehaviour:
     targetDistance: 4
     waitThenSetState: 0
     waitThenSetStateTime: 0
+  animationName: Idle

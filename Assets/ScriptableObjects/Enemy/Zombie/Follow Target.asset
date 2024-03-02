@@ -14,11 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   transitions:
   - state: {fileID: 11400000, guid: 1942098954f71db45a587d9fab09d298, type: 2}
+    stateEvents: 
     agentDistanceComparison: 2
     agentDistance: 3
     targetDistanceComparison: 0
     targetDistance: 0
     waitThenSetState: 0
     waitThenSetStateTime: 0
+  animationName: Walk
   speedScale: 1
   updateInterval: 0.1
