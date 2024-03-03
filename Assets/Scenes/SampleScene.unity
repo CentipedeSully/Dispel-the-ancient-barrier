@@ -14888,7 +14888,7 @@ MonoBehaviour:
   _invincibleStateParamName: inInvincRecovery
   _screenShakeOnHitDuration: 0.1
   _screenShakeOnHitMagnitude: 0.25
-  _timeStutterOnHitMagnitude: 0.25
+  _timeStutterOnHitMagnitude: 0.15
   _energy: 100
   _maxEnergy: 100
   _energyRegen: 15

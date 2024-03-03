@@ -446,13 +446,10 @@ public class PlayerController : MonoBehaviour
                             Vector3 vectorFromSelfToEntity = (entityRB.transform.position - transform.position);
 
                             //ignore the y if it's below 0. This way the entity won't get stuck on the floor
-                            vectorFromSelfToEntity = new Vector3(vectorFromSelfToEntity.x, Mathf.Max(vectorFromSelfToEntity.y, 0),vectorFromSelfToEntity.z).normalized;
-
-                            //Log the magnitude of the vector, for debugging
-                            ConsoleLogger.LogMessage(this.name, $"Entity direction Vector magnitude: {vectorFromSelfToEntity.magnitude}");
+                            vectorFromSelfToEntity = new Vector3(vectorFromSelfToEntity.x, 0,vectorFromSelfToEntity.z).normalized;
 
                             //repulse entity
-                            entityRB.AddForce(vectorFromSelfToEntity * _barrierPushForce * Time.deltaTime, ForceMode.Impulse);
+                            entityRB.AddForce(vectorFromSelfToEntity * _barrierPushForce, ForceMode.Impulse);
 
                             //screenshake!
                             _gameManager.ShakeScreen(_screenShakeMagnitude, _screenShakeDuration);
