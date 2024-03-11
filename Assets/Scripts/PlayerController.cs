@@ -14,7 +14,9 @@ public class PlayerController : MonoBehaviour
     private Vector3 _moveDirection;
     private bool _barrierInput;
     [SerializeField] private PlayerAttributes _playerAttributes;
-    [SerializeField] private GameObject _barrierObject;
+    [SerializeField] private Animator _barrierAnimator;
+    [SerializeField] private string _barrierActiveBoolParamName;
+    [SerializeField] private string _barrierContactTriggerParamName;
 
     [Header("Movement Utilities")]
     [SerializeField] private bool _isStunned = false;
@@ -100,7 +102,6 @@ public class PlayerController : MonoBehaviour
         DetectGround();
 
         CastBarrier();
-        ControlBarrierVisibility();
         TickInternalRepulsions();
         RepulseEntitiesWithinBarrier();
     }
@@ -316,10 +317,12 @@ public class PlayerController : MonoBehaviour
                 _isBarrierAbilityReady = false;
                 Invoke("ReadyBarrierAbility", _barrierCooldown);
 
-
                 //Enter the free barrier grace period
                 _isBarrierCurrentlyFree = true;
                 Invoke("ExitFreeBarrierGracePeriod", _freeBarrierGracePeriod);
+
+                //Set the barrier's animator's state to active
+                _barrierAnimator.SetBool(_barrierActiveBoolParamName, true);
             }
 
 
@@ -371,6 +374,9 @@ public class PlayerController : MonoBehaviour
 
                 //Leave the active barrier state
                 _isBarrierActive = false;
+
+                //Update the barrier animator's state
+                _barrierAnimator.SetBool(_barrierActiveBoolParamName, false);
             }
         }
 
@@ -389,6 +395,9 @@ public class PlayerController : MonoBehaviour
 
             //Deactivate the barrier
             _isBarrierActive = false;
+
+            //Update the barrier animator's state
+            _barrierAnimator.SetBool(_barrierActiveBoolParamName, false);
         }
     }
 
@@ -484,12 +493,17 @@ public class PlayerController : MonoBehaviour
                     //trigger feedback and pay costs if anything has occured
                     if (hasDamageBeenDealth || hasRepulsionOccured)
                     {
-                        //trigger repulsion feedback anim
-                        //...
-
                         //reduce the player's energy if the barrier isn't free
                         if (!_isBarrierCurrentlyFree)
                             _playerAttributes.ModifyEnergy(-_barrierOnContactDrain);
+
+                        //Update the animation state in case this repulsion emptied the player's energy.
+                        //Do this BEFORE triggering the contact animation. The anim will be different if the player has no energy left
+                        if (_playerAttributes.GetEnergy() <= 0)
+                            _barrierAnimator.SetBool(_barrierActiveBoolParamName, false);
+
+                        //trigger repulsion feedback anim
+                        _barrierAnimator.SetTrigger(_barrierContactTriggerParamName);
                     }
                 }
             }
@@ -527,22 +541,6 @@ public class PlayerController : MonoBehaviour
         //overwrite the original dict
         _repulsedEntitiesDict = updatedRecordsDict;
             
-    }
-
-    private void ControlBarrierVisibility()
-    {
-        if (_isBarrierActive)
-        {
-            //show barrier if it's not showing
-            if (!_barrierObject.activeSelf)
-                _barrierObject.SetActive(true);
-        }
-        else
-        {
-            //hide barrier if it's still showing
-            if (_barrierObject.activeSelf)
-                _barrierObject.SetActive(false);
-        }
     }
 
 
