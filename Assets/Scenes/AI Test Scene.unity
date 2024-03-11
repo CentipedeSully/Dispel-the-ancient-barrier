@@ -5927,6 +5927,10 @@ MonoBehaviour:
   _screenShakeMagnitude: 0.1
   _screenShakeDuration: 0.1
   _timeStopDuration: 0.1
+  _barrierJumpDuration: 0.25
+  _barrierJumpInitialMagnitude: 5000
+  _barrierJumpFloatForce: 2000
+  _heightMinimum: 1
 --- !u!212 &1774764766
 SpriteRenderer:
   m_ObjectHideFlags: 0
