@@ -5,6 +5,7 @@ using UnityEngine;
 public class GameManager : MonoBehaviour
 {
     //Declarations
+    [SerializeField] private bool _isTimeStopped = false;
     [Header("Player Utilities")]
     [SerializeField] private InputReader _inputReader;
     [SerializeField] private PlayerController _playerController;
@@ -104,7 +105,12 @@ public class GameManager : MonoBehaviour
         }
     }
 
-
+    private IEnumerator ManageTimeStop(float duration)
+    {
+        yield return new WaitForSecondsRealtime(duration);
+        _isTimeStopped = false;
+        Time.timeScale = 1;
+    }
 
 
     //External Utils
@@ -219,11 +225,16 @@ public class GameManager : MonoBehaviour
 
     public void StutterTime(float duration)
     {
-        ConsoleLogger.LogMessage(this.name, "Time Stutter Requested!");
+        if (!_isTimeStopped)
+        {
+            _isTimeStopped = true;
+            Time.timeScale = 0;
+            StartCoroutine(ManageTimeStop(duration));
+        }
+        
     }
 
     //Debugging
-
 
 
 

@@ -40,11 +40,8 @@ public class CamFocusController : MonoBehaviour
     {
         if (_target != null)
         {
-            //Create get the target's new position
-            Vector3 updatedPosition = new Vector3(_target.position.x,transform.position.y, _target.position.z);
-
             //Apply the new position to self's transform
-            transform.position = updatedPosition;
+            transform.position = _target.transform.position;
         }
     }
 

@@ -14,6 +14,9 @@ public class PlayerController : MonoBehaviour
     private Vector3 _moveDirection;
     private bool _barrierInput;
     [SerializeField] private PlayerAttributes _playerAttributes;
+    [SerializeField] private Animator _barrierAnimator;
+    [SerializeField] private string _barrierActiveBoolParamName;
+    [SerializeField] private string _barrierContactTriggerParamName;
 
     [Header("Movement Utilities")]
     [SerializeField] private bool _isStunned = false;
@@ -72,8 +75,17 @@ public class PlayerController : MonoBehaviour
     [Tooltip("How long will the barrier wait before repulsing a previously pushed entity. " +
         "Used to avoid re-Repulsing entities that've already been pushed back but have failed to get out of the barrier=s radius")]
     [SerializeField] [Min(.05f)] private float _instanceRepulsionCooldown;
-
-
+    [SerializeField] [Min(0)] private float _screenShakeMagnitude;
+    [SerializeField] [Min(0)] private float _screenShakeDuration;
+    [SerializeField] [Min(0)] private float _timeStopDuration;
+    [Space(20)]
+    [SerializeField] [Min(0)] private float _barrierJumpDuration;
+    [Tooltip("This is an impulse force")]
+    [SerializeField] [Min(0)] private int _barrierJumpInitialMagnitude;
+    [SerializeField] [Min(0)] private int _barrierJumpFloatForce;
+    [Tooltip("The minimum height to be above an object for a barrierJump to trigger")]
+    [SerializeField] private float _heightMinimum = 0;
+    private bool _isBarrierJumping = false;
 
 
     //Monos
@@ -104,11 +116,12 @@ public class PlayerController : MonoBehaviour
     private void FixedUpdate()
     {
         CacheMoveDirection();
-        ApplyMoreGravityIfFalling();
         DashPlayer();
         MovePlayer();
         JumpPlayer();
         ApplyRecoil();
+        BarrierJump();
+        ApplyMoreGravityIfFalling();
     }
 
     private void OnDrawGizmosSelected()
@@ -141,7 +154,7 @@ public class PlayerController : MonoBehaviour
 
     private void JumpPlayer()
     {
-        //are we legally trying to enter the jumpstate?
+        //are trying to jump from the ground?
         if (_isOnGround && _inputReader.GetJumpInput() && _isJumpReady && !_isJumping && !_isStunned)
         {
             //Check if we have enough stamina
@@ -227,7 +240,7 @@ public class PlayerController : MonoBehaviour
         if (_playerRB != null)
         {
             //Add a more polished downwards force if the player is falling
-            if (!_isOnGround && !_isJumping)
+            if (!_isOnGround && !_isJumping && !_isBarrierJumping)
                 _playerRB.AddForce(Vector3.down * Time.deltaTime * _gravityModifier);
         }
             
@@ -312,10 +325,12 @@ public class PlayerController : MonoBehaviour
                 _isBarrierAbilityReady = false;
                 Invoke("ReadyBarrierAbility", _barrierCooldown);
 
-
                 //Enter the free barrier grace period
                 _isBarrierCurrentlyFree = true;
                 Invoke("ExitFreeBarrierGracePeriod", _freeBarrierGracePeriod);
+
+                //Set the barrier's animator's state to active
+                _barrierAnimator.SetBool(_barrierActiveBoolParamName, true);
             }
 
 
@@ -367,6 +382,9 @@ public class PlayerController : MonoBehaviour
 
                 //Leave the active barrier state
                 _isBarrierActive = false;
+
+                //Update the barrier animator's state
+                _barrierAnimator.SetBool(_barrierActiveBoolParamName, false);
             }
         }
 
@@ -385,6 +403,9 @@ public class PlayerController : MonoBehaviour
 
             //Deactivate the barrier
             _isBarrierActive = false;
+
+            //Update the barrier animator's state
+            _barrierAnimator.SetBool(_barrierActiveBoolParamName, false);
         }
     }
 
@@ -422,6 +443,7 @@ public class PlayerController : MonoBehaviour
 
             bool hasRepulsionOccured = false;
             bool hasDamageBeenDealth = false;
+            bool isBarrierJumpTriggered = false;
 
             for (int i = 0; i < detectedColliders.Length; i++)
             {
@@ -441,14 +463,25 @@ public class PlayerController : MonoBehaviour
                             //get the entity's directional distance vector
                             Vector3 vectorFromSelfToEntity = (entityRB.transform.position - transform.position);
 
+                            //if the entity is below, then trigger a barrierJump!
+                            if (IsDistanceValidForBarrierJump(vectorFromSelfToEntity))
+                                isBarrierJumpTriggered = true;
+
                             //ignore the y if it's below 0. This way the entity won't get stuck on the floor
-                            vectorFromSelfToEntity = new Vector3(vectorFromSelfToEntity.x, Mathf.Max(vectorFromSelfToEntity.y, 0),vectorFromSelfToEntity.z).normalized;
+                            vectorFromSelfToEntity = new Vector3(vectorFromSelfToEntity.x, 0,vectorFromSelfToEntity.z).normalized;
 
                             //repulse entity
-                            entityRB.AddForce(vectorFromSelfToEntity * _barrierPushForce * Time.deltaTime, ForceMode.Impulse);
+                            entityRB.AddForce(vectorFromSelfToEntity * _barrierPushForce, ForceMode.Impulse);
 
-                            //Accrue the kickback force from pushing the entity. 
-                            _barrierRecoilVector += -vectorFromSelfToEntity; //make sure it's negative
+                            //screenshake!
+                            _gameManager.ShakeScreen(_screenShakeMagnitude, _screenShakeDuration);
+
+                            //timestop!
+                            _gameManager.StutterTime(_timeStopDuration);
+
+                            //Accrue the kickback force from pushing the entity. Only if not barrier jumping
+                            if (!isBarrierJumpTriggered)
+                                _barrierRecoilVector += -vectorFromSelfToEntity; //make sure it's negative
 
                             hasRepulsionOccured = true;
                         }
@@ -474,17 +507,33 @@ public class PlayerController : MonoBehaviour
                     //trigger feedback and pay costs if anything has occured
                     if (hasDamageBeenDealth || hasRepulsionOccured)
                     {
-                        //trigger repulsion feedback anim
-                        //...
-
                         //reduce the player's energy if the barrier isn't free
                         if (!_isBarrierCurrentlyFree)
                             _playerAttributes.ModifyEnergy(-_barrierOnContactDrain);
+
+                        //Update the animation state in case this repulsion emptied the player's energy.
+                        //Do this BEFORE triggering the contact animation. The anim will be different if the player has no energy left
+                        if (_playerAttributes.GetEnergy() <= 0)
+                            _barrierAnimator.SetBool(_barrierActiveBoolParamName, false);
+
+                        //trigger repulsion feedback anim
+                        _barrierAnimator.SetTrigger(_barrierContactTriggerParamName);
+
+                        //Barrier Jump!
+                        if (isBarrierJumpTriggered)
+                            TriggerBarrierJump();
                     }
                 }
             }
         }
 
+    }
+
+    private bool IsDistanceValidForBarrierJump(Vector3 vectorFromSelf)
+    {
+        //ConsoleLogger.LogMessage(this.name, $"detected height difference: {-vectorFromSelf.y}");
+        //Invert the vector to get the proper relative direction
+        return -vectorFromSelf.y > _heightMinimum;
     }
 
     private void ApplyRecoil()
@@ -496,6 +545,48 @@ public class PlayerController : MonoBehaviour
 
             //clear the accrued recoil
             _barrierRecoilVector = Vector3.zero;
+        }
+    }
+
+    private void BarrierJump()
+    {
+        if (_isBarrierJumping)
+        {
+            //float the player a bit
+            _playerRB.AddForce(Vector3.up * _barrierJumpFloatForce * Time.deltaTime);
+        }
+    }
+
+    private void TriggerBarrierJump()
+    {
+        //Cancel the previous barrier jump
+        if (_isBarrierJumping)
+            InterruptBarrierJump();
+
+        //start a new barrier jump!
+        _isBarrierJumping = true;
+
+        //Zero out the player'y y velocity to make the jumping more consistent
+        _playerRB.velocity = new Vector3(_playerRB.velocity.x, 0, _playerRB.velocity.z);
+
+        //apply the initial barrierJumpForce
+        _playerRB.AddForce(Vector3.up * _barrierJumpInitialMagnitude * Time.deltaTime, ForceMode.Impulse);
+
+        //Tick the jump's duration
+        Invoke("EndBarrierJump", _barrierJumpDuration);
+    }
+
+    private void EndBarrierJump()
+    {
+        _isBarrierJumping = false;
+    }
+
+    private void InterruptBarrierJump()
+    {
+        if (_isBarrierJumping)
+        {
+            CancelInvoke("EndBarrierJump");
+            EndBarrierJump();
         }
     }
 
