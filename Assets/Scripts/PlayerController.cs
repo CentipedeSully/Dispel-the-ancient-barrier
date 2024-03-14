@@ -443,6 +443,7 @@ public class PlayerController : MonoBehaviour
 
             bool hasRepulsionOccured = false;
             bool hasDamageBeenDealth = false;
+            bool isBarrierJumpTriggered = false;
 
             for (int i = 0; i < detectedColliders.Length; i++)
             {
@@ -464,7 +465,7 @@ public class PlayerController : MonoBehaviour
 
                             //if the entity is below, then trigger a barrierJump!
                             if (IsDistanceValidForBarrierJump(vectorFromSelfToEntity))
-                                TriggerBarrierJump();
+                                isBarrierJumpTriggered = true;
 
                             //ignore the y if it's below 0. This way the entity won't get stuck on the floor
                             vectorFromSelfToEntity = new Vector3(vectorFromSelfToEntity.x, 0,vectorFromSelfToEntity.z).normalized;
@@ -478,8 +479,9 @@ public class PlayerController : MonoBehaviour
                             //timestop!
                             _gameManager.StutterTime(_timeStopDuration);
 
-                            //Accrue the kickback force from pushing the entity. 
-                            _barrierRecoilVector += -vectorFromSelfToEntity; //make sure it's negative
+                            //Accrue the kickback force from pushing the entity. Only if not barrier jumping
+                            if (!isBarrierJumpTriggered)
+                                _barrierRecoilVector += -vectorFromSelfToEntity; //make sure it's negative
 
                             hasRepulsionOccured = true;
                         }
@@ -516,6 +518,10 @@ public class PlayerController : MonoBehaviour
 
                         //trigger repulsion feedback anim
                         _barrierAnimator.SetTrigger(_barrierContactTriggerParamName);
+
+                        //Barrier Jump!
+                        if (isBarrierJumpTriggered)
+                            TriggerBarrierJump();
                     }
                 }
             }
